@@ -143,8 +143,8 @@ void drawScene(GLFWwindow* window) {
 
 	// 3. Kamera 
 	glm::mat4 V = glm::lookAt(
-		glm::vec3(0.0f, 5.0f, 15.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(-3.3f, 5.0f, 15.0f),
+		glm::vec3(-3.3f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 1.0f, 0.0f)
 	);
 	glm::mat4 P = glm::perspective(glm::radians(50.0f), 1.0f, 0.1f, 100.0f);
@@ -158,6 +158,9 @@ void drawScene(GLFWwindow* window) {
 	glm::mat4 M = glm::mat4(1.0f);
 	M = glm::scale(M, glm::vec3(0.05f, 0.05f, 0.05f));
 
+
+	// TDC - 13 w górę 
+
 	// 4. Macierze obiektów
 	// 4.1. WAŁ
 	glm::mat4 mWal = M; // On jest w punkcie 0 naszego projektu (całość jest dostosowana do niego), więc nie musimy go przesuwać
@@ -167,28 +170,28 @@ void drawScene(GLFWwindow* window) {
 
 	// 4.2. KORBOWÓD
 	glm::mat4 mKorbowod = M;
-	mKorbowod = glm::translate(mKorbowod, glm::vec3(0.0f, 2.0f, 0.0f)); // Przesuwamy korbowód na wał
+	mKorbowod = glm::translate(mKorbowod, glm::vec3(-65.0f, 15.0f, 0.0f)); // Przesuwamy korbowód na wał
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mKorbowod));
 	glBindVertexArray(korbowod.vao);
 	glDrawArrays(GL_TRIANGLES, 0, korbowod.vertexCount);
 
 	// 4.3. TŁOK
 	glm::mat4 mTlok = M;
-	mTlok = glm::translate(mTlok, glm::vec3(0.0f, 62.5f, 0.0f)); // Przesuwamy tłok na korbowód
+	mTlok = glm::translate(mTlok, glm::vec3(-65.0f, 75.5f, 0.0f)); // Przesuwamy tłok na korbowód
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mTlok));
 	glBindVertexArray(tlok.vao);
 	glDrawArrays(GL_TRIANGLES, 0, tlok.vertexCount);
 
 	// 4.4. ZAWÓR SSĄCY
 	glm::mat4 mZawors = M;
-	mZawors = glm::translate(mZawors, glm::vec3(0.0f, 90.0f, 5.0f)); // Przesuwamy zawór ssący na tłok
+	mZawors = glm::translate(mZawors, glm::vec3(-65.0f, 103.0f, 5.0f)); // Przesuwamy zawór ssący na tłok
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mZawors));
 	glBindVertexArray(zawors.vao);
 	glDrawArrays(GL_TRIANGLES, 0, zawors.vertexCount);
 
 	// 4.5. ZAWÓR WYDECHOWY
 	glm::mat4 mZaworw = M;
-	mZaworw = glm::translate(mZaworw, glm::vec3(0.0f, 90.0f, -5.0f)); // Przesuwamy zawór wydechowy na tłok
+	mZaworw = glm::translate(mZaworw, glm::vec3(-65.0f, 103.0f, -5.0f)); // Przesuwamy zawór wydechowy na tłok
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mZaworw));
 	glBindVertexArray(zaworw.vao);
 	glDrawArrays(GL_TRIANGLES, 0, zaworw.vertexCount);
