@@ -135,7 +135,7 @@ void freeOpenGLProgram(GLFWwindow* window) {
 
 //Procedura rysująca zawartość sceny
 void drawScene(GLFWwindow* window) {
-	// 1. Czyszczenie ekranu i bufora głębokości (teraz będzie działać poprawnie)
+	// 1. Czyszczenie ekranu i bufora głębokości 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// 2. Uruchomienie shadera
@@ -148,40 +148,59 @@ void drawScene(GLFWwindow* window) {
 		glm::vec3(0.0f, 1.0f, 0.0f)
 	);
 	glm::mat4 P = glm::perspective(glm::radians(50.0f), 1.0f, 0.1f, 100.0f);
-
 	glUniformMatrix4fv(spColored->u("V"), 1, false, glm::value_ptr(V));
 	glUniformMatrix4fv(spColored->u("P"), 1, false, glm::value_ptr(P));
-
-	// 4. Macierz modelu
-	glm::mat4 M = glm::mat4(1.0f);
-	M = glm::scale(M, glm::vec3(0.05f, 0.05f, 0.05f));
-	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(M));
 
 	// WYMUSZAMY RYSOWANIE SIATKI (WIREFRAME) DLA WSZYSTKICH OBIEKTÓW
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	// 5. WŁAŚCIWE RYSOWANIE
-	glBindVertexArray(tlok.vao);
-	glDrawArrays(GL_TRIANGLES, 0, tlok.vertexCount);
+	// Wspólna skala i pozycja 
+	glm::mat4 M = glm::mat4(1.0f);
+	M = glm::scale(M, glm::vec3(0.05f, 0.05f, 0.05f));
 
-	glBindVertexArray(korbowod.vao);
-	glDrawArrays(GL_TRIANGLES, 0, korbowod.vertexCount);
-
+	// 4. Macierze obiektów
+	// 4.1. WAŁ
+	glm::mat4 mWal = M; // On jest w punkcie 0 naszego projektu (całość jest dostosowana do niego), więc nie musimy go przesuwać
+	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mWal)); 
 	glBindVertexArray(wal.vao);
 	glDrawArrays(GL_TRIANGLES, 0, wal.vertexCount);
 
+	// 4.2. KORBOWÓD
+	glm::mat4 mKorbowod = M;
+	mKorbowod = glm::translate(mKorbowod, glm::vec3(0.0f, 2.0f, 0.0f)); // Przesuwamy korbowód na wał
+	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mKorbowod));
+	glBindVertexArray(korbowod.vao);
+	glDrawArrays(GL_TRIANGLES, 0, korbowod.vertexCount);
+
+	// 4.3. TŁOK
+	glm::mat4 mTlok = M;
+	mTlok = glm::translate(mTlok, glm::vec3(0.0f, 62.5f, 0.0f)); // Przesuwamy tłok na korbowód
+	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mTlok));
+	glBindVertexArray(tlok.vao);
+	glDrawArrays(GL_TRIANGLES, 0, tlok.vertexCount);
+
+	// 4.4. ZAWÓR SSĄCY
+	glm::mat4 mZawors = M;
+	mZawors = glm::translate(mZawors, glm::vec3(0.0f, 90.0f, 5.0f)); // Przesuwamy zawór ssący na tłok
+	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mZawors));
 	glBindVertexArray(zawors.vao);
 	glDrawArrays(GL_TRIANGLES, 0, zawors.vertexCount);
 
+	// 4.5. ZAWÓR WYDECHOWY
+	glm::mat4 mZaworw = M;
+	mZaworw = glm::translate(mZaworw, glm::vec3(0.0f, 90.0f, -5.0f)); // Przesuwamy zawór wydechowy na tłok
+	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mZaworw));
 	glBindVertexArray(zaworw.vao);
 	glDrawArrays(GL_TRIANGLES, 0, zaworw.vertexCount);
+
+
 
 	glBindVertexArray(0);
 
 	// PRZYWRACAMY RYSOWANIE SOLIDNE (dobra praktyka, by nie psuć innych części programu)
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	// 6. Przerzucenie buforów
+	// 5. Przerzucenie buforów
 	glfwSwapBuffers(window);
 }
 
