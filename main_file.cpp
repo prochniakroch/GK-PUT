@@ -31,7 +31,6 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include "lodepng.h"
 #include "shaderprogram.h"
 #include <vector>
-
 // To makro jest wymagane, aby tinyobjloader wygenerował swój kod
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
@@ -43,7 +42,7 @@ struct ModelData {
 	int vertexCount;
 };
 
-// Tworzymy 4 osobne "pudełka" dla 4 części silnika
+// Tworzymy 5 osobnych "pudełek" dla 5 części silnika
 ModelData tlok, korbowod, wal, zawors, zaworw;
 
 ModelData LoadModelOBJ(const char* path) {
@@ -141,6 +140,22 @@ void drawScene(GLFWwindow* window) {
 	// 2. Uruchomienie shadera
 	spColored->use();
 
+	// Stałe
+	static float angle = 0.0f;
+	float speed = 0.05f;
+	float r = 1.0f; // promień wału
+	float l = 4.0f; // długość korbowodu
+
+	// Klawisze
+	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+		angle += speed;
+	};
+
+	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+		angle -= speed;
+	};
+
+
 	// 3. Kamera 
 	// 1 -> -3.4, 2 -> -1.2, 3 -> 1.2, 4 -> 3.4
 
@@ -180,6 +195,7 @@ void drawScene(GLFWwindow* window) {
 	// 4. Macierze obiektów
 	// 4.0 WAŁ
 	glm::mat4 mWal = M; // On jest w punkcie 0 naszego projektu (całość jest dostosowana do niego), więc nie musimy go przesuwać
+	mWal = glm::rotate(mWal, angle, glm::vec3(1.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mWal));
 	glBindVertexArray(wal.vao);
 	glDrawArrays(GL_TRIANGLES, 0, wal.vertexCount);
