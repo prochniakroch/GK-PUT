@@ -117,7 +117,7 @@ void initOpenGLProgram(GLFWwindow* window) {
 
 	// Wczytujemy pliki z dysku i zapisujemy ich dane do kart pamięci VRAM
 	tlok = LoadModelOBJ("tlok.obj");
-	wal = LoadModelOBJ("wal.obj");
+	wal = LoadModelOBJ("wal1.obj");
 	korbowod = LoadModelOBJ("korbowod.obj");
 	zawors = LoadModelOBJ("zawors.obj");
 	zaworw = LoadModelOBJ("zaworw.obj");
@@ -181,8 +181,8 @@ void drawScene(GLFWwindow* window) {
 	// 1 -> -3.4, 2 -> -1.2, 3 -> 1.2, 4 -> 3.4
 
 	glm::mat4 V = glm::lookAt(
-		glm::vec3(0.0f, 5.0f, 15.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(-3.4f, 5.0f, 15.0f),
+		glm::vec3(-3.4f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 1.0f, 0.0f)
 	);
 	glm::mat4 P = glm::perspective(glm::radians(50.0f), 1.0f, 0.1f, 100.0f);
@@ -212,10 +212,12 @@ void drawScene(GLFWwindow* window) {
 	float BDC_Zaworw = 103.0f;
 
 	float odstep = 41.0f; // Odstęp między cylindrami
+	float wal_w_lewo = -117.5f;
 
 	// 4. Macierze obiektów
 	// 4.0 WAŁ
-	glm::mat4 mWal = M; // On jest w punkcie 0 naszego projektu (całość jest dostosowana do niego), więc nie musimy go przesuwać
+	glm::mat4 mWal = M;
+	mWal = glm::translate(mWal, glm::vec3(wal_w_lewo, 0.0f, 0.0f));
 	mWal = glm::rotate(mWal, angle, glm::vec3(1.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mWal));
 	glBindVertexArray(wal.vao);
