@@ -143,8 +143,12 @@ void drawScene(GLFWwindow* window) {
 	// Stałe
 	static float angle = 0.0f;
 	float speed = 0.05f;
-	float r = 1.0f; // promień wału
-	float l = 4.0f; // długość korbowodu
+	float r = 16.125f; // promień wału 16.125
+	float l = 52.0f; // długość korbowodu 52
+
+	float tlok14 = r * cos(angle) + sqrt(l * l - r * r * sin(angle) * sin(angle)); // pozycja tłoka w osi Y, wynik z twierdzenia Pitagorasa)
+	float angle_180 = angle + 3.14f;
+	float tlok23 = r * cos(angle_180) + sqrt(l * l - r * r * sin(angle_180) * sin(angle_180));;
 
 	// Klawisze
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
@@ -187,8 +191,8 @@ void drawScene(GLFWwindow* window) {
 	float BDC = 0.0f;
 	float BDC_Korbowod = -15.0f;
 	float BDC_Tlok = 45.5f;
-	float BDC_Zawors = 73.0f;
-	float BDC_Zaworw = 73.0f;
+	float BDC_Zawors = 103.0f;
+	float BDC_Zaworw = 103.0f;
 
 	float odstep = 41.0f; // Odstęp między cylindrami
 
@@ -211,7 +215,7 @@ void drawScene(GLFWwindow* window) {
 
 	// 4.1.2 TŁOK
 	glm::mat4 mTlok1 = M;
-	mTlok1 = glm::translate(mTlok1, glm::vec3(-65.0f, TDC_Tlok, 0.0f)); // Przesuwamy tłok na korbowód
+	mTlok1 = glm::translate(mTlok1, glm::vec3(-65.0f, tlok14, 0.0f)); // Przesuwamy tłok na korbowód
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mTlok1));
 	glBindVertexArray(tlok.vao);
 	glDrawArrays(GL_TRIANGLES, 0, tlok.vertexCount);
@@ -240,7 +244,7 @@ void drawScene(GLFWwindow* window) {
 
 	// 4.2.2 TŁOK
 	glm::mat4 mTlok2 = M;
-	mTlok2 = glm::translate(mTlok2, glm::vec3(-65.0f + odstep, BDC_Tlok, 0.0f)); // Przesuwamy tłok na korbowód
+	mTlok2 = glm::translate(mTlok2, glm::vec3(-65.0f + odstep, tlok23, 0.0f)); // Przesuwamy tłok na korbowód
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mTlok2));
 	glBindVertexArray(tlok.vao);
 	glDrawArrays(GL_TRIANGLES, 0, tlok.vertexCount);
@@ -269,7 +273,7 @@ void drawScene(GLFWwindow* window) {
 
 	// 4.3.2 TŁOK
 	glm::mat4 mTlok3 = M;
-	mTlok3 = glm::translate(mTlok3, glm::vec3(-65.0f + odstep * 2, BDC_Tlok, 0.0f)); // Przesuwamy tłok na korbowód
+	mTlok3 = glm::translate(mTlok3, glm::vec3(-65.0f + odstep * 2, tlok23, 0.0f)); // Przesuwamy tłok na korbowód
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mTlok3));
 	glBindVertexArray(tlok.vao);
 	glDrawArrays(GL_TRIANGLES, 0, tlok.vertexCount);
@@ -298,7 +302,7 @@ void drawScene(GLFWwindow* window) {
 
 	// 4.4.2 TŁOK
 	glm::mat4 mTlok4 = M;
-	mTlok4 = glm::translate(mTlok4, glm::vec3(-65.0f + odstep * 3, TDC_Tlok, 0.0f)); // Przesuwamy tłok na korbowód
+	mTlok4 = glm::translate(mTlok4, glm::vec3(-65.0f + odstep * 3, tlok14, 0.0f)); // Przesuwamy tłok na korbowód
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mTlok4));
 	glBindVertexArray(tlok.vao);
 	glDrawArrays(GL_TRIANGLES, 0, tlok.vertexCount);
