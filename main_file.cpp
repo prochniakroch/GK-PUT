@@ -146,9 +146,26 @@ void drawScene(GLFWwindow* window) {
 	float r = 16.125f; // promień wału 16.125
 	float l = 52.0f; // długość korbowodu 52
 
+	// 1 - 4
+	float cylinder1 = -65.0f;
+	float cylinder4 = -65.0f + 41.0f * 3;
 	float tlok14 = r * cos(angle) + sqrt(l * l - r * r * sin(angle) * sin(angle)); // pozycja tłoka w osi Y, wynik z twierdzenia Pitagorasa)
+	float pin_x_14 = -r * sin(angle); // pozycja sworznia w osi X
+	float pin_y_14 = r * cos(angle); // pozycja sworznia w osi Y
+	float sr_korb_x_14 = pin_x_14 / 2.0f;
+	float sr_korb_y_14 = (pin_y_14 + tlok14) / 2.0f;
+	float kat_korb_14 = asin((r * sin(angle)) / l);
+
+	// 2 - 3
+	float cylinder2 = -65.0f + 41.0f;
+	float cylinder3 = -65.0f + 41.0f * 2;
 	float angle_180 = angle + 3.14f;
-	float tlok23 = r * cos(angle_180) + sqrt(l * l - r * r * sin(angle_180) * sin(angle_180));;
+	float tlok23 = r * cos(angle_180) + sqrt(l * l - r * r * sin(angle_180) * sin(angle_180));
+	float pin_x_23 = -r * sin(angle_180); // pozycja sworznia w osi X
+	float pin_y_23 = r * cos(angle_180); // pozycja sworznia w osi Y
+	float sr_korb_x_23 = pin_x_23 / 2.0f;
+	float sr_korb_y_23 = (pin_y_23 + tlok23) / 2.0f;
+	float kat_korb_23 = asin((r * sin(angle_180)) / l);
 
 	// Klawisze
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
@@ -208,7 +225,8 @@ void drawScene(GLFWwindow* window) {
 	// 4.1 CYLINDER 1
 	// 4.1.1 KORBOWÓD
 	glm::mat4 mKorbowod1 = M;
-	mKorbowod1 = glm::translate(mKorbowod1, glm::vec3(-65.0f, TDC_Korbowod, 0.0f)); // Przesuwamy korbowód na wał
+	mKorbowod1 = glm::translate(mKorbowod1, glm::vec3(cylinder1, pin_y_14, pin_x_14)); // Przesuwamy korbowód na wał
+	mKorbowod1 = glm::rotate(mKorbowod1, kat_korb_14, glm::vec3(1.0f, 0.0f, 0.0f)); // Obracamy korbowód o odpowiedni kąt
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mKorbowod1));
 	glBindVertexArray(korbowod.vao);
 	glDrawArrays(GL_TRIANGLES, 0, korbowod.vertexCount);
@@ -237,7 +255,8 @@ void drawScene(GLFWwindow* window) {
 	// 4.2 CYLINDER 2
 	// 4.2.1 KORBOWOD
 	glm::mat4 mKorbowod2 = M;
-	mKorbowod2 = glm::translate(mKorbowod2, glm::vec3(-65.0f + odstep, BDC_Korbowod, 0.0f)); // Przesuwamy korbowód na wał
+	mKorbowod2 = glm::translate(mKorbowod2, glm::vec3(cylinder2, pin_y_23, pin_x_23)); // Przesuwamy korbowód na wał
+	mKorbowod2 = glm::rotate(mKorbowod2, kat_korb_23, glm::vec3(1.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mKorbowod2));
 	glBindVertexArray(korbowod.vao);
 	glDrawArrays(GL_TRIANGLES, 0, korbowod.vertexCount);
@@ -266,7 +285,8 @@ void drawScene(GLFWwindow* window) {
 	// 4.3 CYLINDER 3
 	// 4.3.1 KORBOWOD
 	glm::mat4 mKorbowod3 = M;
-	mKorbowod3 = glm::translate(mKorbowod3, glm::vec3(-65.0f + odstep * 2, BDC_Korbowod, 0.0f)); // Przesuwamy korbowód na wał
+	mKorbowod3 = glm::translate(mKorbowod3, glm::vec3(cylinder3, pin_y_23, pin_x_23)); // Przesuwamy korbowód na wał
+	mKorbowod3 = glm::rotate(mKorbowod3, kat_korb_23, glm::vec3(1.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mKorbowod3));
 	glBindVertexArray(korbowod.vao);
 	glDrawArrays(GL_TRIANGLES, 0, korbowod.vertexCount);
@@ -295,7 +315,8 @@ void drawScene(GLFWwindow* window) {
 	// 4.4 CYLINDER 4
 	// 4.4.1 KORBOWÓD
 	glm::mat4 mKorbowod4 = M;
-	mKorbowod4 = glm::translate(mKorbowod4, glm::vec3(-65.0f + odstep * 3, TDC_Korbowod, 0.0f)); // Przesuwamy korbowód na wał
+	mKorbowod4 = glm::translate(mKorbowod4, glm::vec3(cylinder4, pin_y_14, pin_x_14)); // Przesuwamy korbowód na wał
+	mKorbowod4 = glm::rotate(mKorbowod4, kat_korb_14, glm::vec3(1.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mKorbowod4));
 	glBindVertexArray(korbowod.vao);
 	glDrawArrays(GL_TRIANGLES, 0, korbowod.vertexCount);
