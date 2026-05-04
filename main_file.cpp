@@ -35,6 +35,10 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
+float speed_x = 0;
+float speed_y = 0;
+float aspectRatio = 1;
+
 // Zamiast luźnych zmiennych, robimy "pudełko" na dane modelu
 struct ModelData {
 	GLuint vao;
@@ -102,6 +106,13 @@ ModelData LoadModelOBJ(const char* path) {
 	return data; // Zwracamy gotowe bufory z karty graficznej
 }
 
+// Procedura obsługi zmiany rozmiaru okna
+void windowResizeCallback(GLFWwindow* window, int width, int height) {
+	if (height == 0) return;
+	aspectRatio = (float)width / (float)height;
+	glViewport(0, 0, width, height);
+}
+
 //Procedura obsługi błędów
 void error_callback(int error, const char* description) {
 	fputs(description, stderr);
@@ -114,6 +125,8 @@ void initOpenGLProgram(GLFWwindow* window) {
 
 	// WŁĄCZAMY TEST GŁĘBOKOŚCI (To absolutnie kluczowe w 3D!)
 	glEnable(GL_DEPTH_TEST);
+
+	glfwSetWindowSizeCallback(window, windowResizeCallback);
 
 	// Wczytujemy pliki z dysku i zapisujemy ich dane do kart pamięci VRAM
 	tlok = LoadModelOBJ("tlok.obj");
@@ -133,7 +146,7 @@ void freeOpenGLProgram(GLFWwindow* window) {
 
 
 //Procedura rysująca zawartość sceny
-void drawScene(GLFWwindow* window) {
+void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	// 1. Czyszczenie ekranu i bufora głębokości 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -143,17 +156,19 @@ void drawScene(GLFWwindow* window) {
 	// Stałe
 	static float angle = 0.0f;
 	float speed = 0.05f;
-	float r = 16.125f; // promień wału 16.125
-	float l = 52.0f; // długość korbowodu 52
+	// promień wału 17.437 lub 17.40335
+	float r = 17.40335f; // promień wału 16.125
+	// długość korbowodu 52.0892 lub 52.68452
+	float l = 52.68452f; // długość korbowodu 52 
+	// tlok ma 8.01949 do swożnia
+	float offset_tloka = 8.01949f; // offset tłoka 8.0f
 
 	// 1 - 4
 	float cylinder1 = -65.0f;
 	float cylinder4 = -65.0f + 41.0f * 3;
 	float tlok14 = r * cos(angle) + sqrt(l * l - r * r * sin(angle) * sin(angle)); // pozycja tłoka w osi Y, wynik z twierdzenia Pitagorasa)
-	float pin_x_14 = -r * sin(angle); // pozycja sworznia w osi X
-	float pin_y_14 = r * cos(angle); // pozycja sworznia w osi Y
-	float sr_korb_x_14 = pin_x_14 / 2.0f;
-	float sr_korb_y_14 = (pin_y_14 + tlok14) / 2.0f;
+	float pin_y_14 = r * cos(angle); // pozycja sworznia w osi X
+	float pin_z_14 = r * sin(angle); // pozycja sworznia w osi Y
 	float kat_korb_14 = asin((r * sin(angle)) / l);
 
 	// 2 - 3
@@ -161,10 +176,8 @@ void drawScene(GLFWwindow* window) {
 	float cylinder3 = -65.0f + 41.0f * 2;
 	float angle_180 = angle + 3.14f;
 	float tlok23 = r * cos(angle_180) + sqrt(l * l - r * r * sin(angle_180) * sin(angle_180));
-	float pin_x_23 = -r * sin(angle_180); // pozycja sworznia w osi X
-	float pin_y_23 = r * cos(angle_180); // pozycja sworznia w osi Y
-	float sr_korb_x_23 = pin_x_23 / 2.0f;
-	float sr_korb_y_23 = (pin_y_23 + tlok23) / 2.0f;
+	float pin_y_23 = r * cos(angle_180); // pozycja sworznia w osi X
+	float pin_z_23 = r * sin(angle_180); // pozycja sworznia w osi Y
 	float kat_korb_23 = asin((r * sin(angle_180)) / l);
 
 	// Klawisze
@@ -181,11 +194,11 @@ void drawScene(GLFWwindow* window) {
 	// 1 -> -3.4, 2 -> -1.2, 3 -> 1.2, 4 -> 3.4
 
 	glm::mat4 V = glm::lookAt(
-		glm::vec3(-3.4f, 5.0f, 15.0f),
-		glm::vec3(-3.4f, 0.0f, 0.0f),
+		glm::vec3(-3.2f, 5.0f, 15.0f),
+		glm::vec3(-3.2f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 1.0f, 0.0f)
 	);
-	glm::mat4 P = glm::perspective(glm::radians(50.0f), 1.0f, 0.1f, 100.0f);
+	glm::mat4 P = glm::perspective(50.0f * PI / 180.0f, aspectRatio, 0.01f, 50.0f);
 	glUniformMatrix4fv(spColored->u("V"), 1, false, glm::value_ptr(V));
 	glUniformMatrix4fv(spColored->u("P"), 1, false, glm::value_ptr(P));
 
@@ -227,15 +240,15 @@ void drawScene(GLFWwindow* window) {
 	// 4.1 CYLINDER 1
 	// 4.1.1 KORBOWÓD
 	glm::mat4 mKorbowod1 = M;
-	mKorbowod1 = glm::translate(mKorbowod1, glm::vec3(cylinder1, pin_y_14, pin_x_14)); // Przesuwamy korbowód na wał
-	mKorbowod1 = glm::rotate(mKorbowod1, kat_korb_14, glm::vec3(1.0f, 0.0f, 0.0f)); // Obracamy korbowód o odpowiedni kąt
+	mKorbowod1 = glm::translate(mKorbowod1, glm::vec3(cylinder1, pin_y_14, pin_z_14)); // Przesuwamy korbowód na wał
+	mKorbowod1 = glm::rotate(mKorbowod1, -kat_korb_14, glm::vec3(1.0f, 0.0f, 0.0f)); // Obracamy korbowód o odpowiedni kąt
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mKorbowod1));
 	glBindVertexArray(korbowod.vao);
 	glDrawArrays(GL_TRIANGLES, 0, korbowod.vertexCount);
 
 	// 4.1.2 TŁOK
 	glm::mat4 mTlok1 = M;
-	mTlok1 = glm::translate(mTlok1, glm::vec3(-65.0f, tlok14, 0.0f)); // Przesuwamy tłok na korbowód
+	mTlok1 = glm::translate(mTlok1, glm::vec3(-65.0f, tlok14 + offset_tloka, 0.0f)); // Przesuwamy tłok na korbowód
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mTlok1));
 	glBindVertexArray(tlok.vao);
 	glDrawArrays(GL_TRIANGLES, 0, tlok.vertexCount);
@@ -257,15 +270,15 @@ void drawScene(GLFWwindow* window) {
 	// 4.2 CYLINDER 2
 	// 4.2.1 KORBOWOD
 	glm::mat4 mKorbowod2 = M;
-	mKorbowod2 = glm::translate(mKorbowod2, glm::vec3(cylinder2, pin_y_23, pin_x_23)); // Przesuwamy korbowód na wał
-	mKorbowod2 = glm::rotate(mKorbowod2, kat_korb_23, glm::vec3(1.0f, 0.0f, 0.0f));
+	mKorbowod2 = glm::translate(mKorbowod2, glm::vec3(cylinder2, pin_y_23, pin_z_23)); // Przesuwamy korbowód na wał
+	mKorbowod2 = glm::rotate(mKorbowod2, -kat_korb_23, glm::vec3(1.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mKorbowod2));
 	glBindVertexArray(korbowod.vao);
 	glDrawArrays(GL_TRIANGLES, 0, korbowod.vertexCount);
 
 	// 4.2.2 TŁOK
 	glm::mat4 mTlok2 = M;
-	mTlok2 = glm::translate(mTlok2, glm::vec3(-65.0f + odstep, tlok23, 0.0f)); // Przesuwamy tłok na korbowód
+	mTlok2 = glm::translate(mTlok2, glm::vec3(-65.0f + odstep, tlok23 + offset_tloka, 0.0f)); // Przesuwamy tłok na korbowód
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mTlok2));
 	glBindVertexArray(tlok.vao);
 	glDrawArrays(GL_TRIANGLES, 0, tlok.vertexCount);
@@ -287,15 +300,15 @@ void drawScene(GLFWwindow* window) {
 	// 4.3 CYLINDER 3
 	// 4.3.1 KORBOWOD
 	glm::mat4 mKorbowod3 = M;
-	mKorbowod3 = glm::translate(mKorbowod3, glm::vec3(cylinder3, pin_y_23, pin_x_23)); // Przesuwamy korbowód na wał
-	mKorbowod3 = glm::rotate(mKorbowod3, kat_korb_23, glm::vec3(1.0f, 0.0f, 0.0f));
+	mKorbowod3 = glm::translate(mKorbowod3, glm::vec3(cylinder3, pin_y_23, pin_z_23)); // Przesuwamy korbowód na wał
+	mKorbowod3 = glm::rotate(mKorbowod3, -kat_korb_23, glm::vec3(1.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mKorbowod3));
 	glBindVertexArray(korbowod.vao);
 	glDrawArrays(GL_TRIANGLES, 0, korbowod.vertexCount);
 
 	// 4.3.2 TŁOK
 	glm::mat4 mTlok3 = M;
-	mTlok3 = glm::translate(mTlok3, glm::vec3(-65.0f + odstep * 2, tlok23, 0.0f)); // Przesuwamy tłok na korbowód
+	mTlok3 = glm::translate(mTlok3, glm::vec3(-65.0f + odstep * 2, tlok23 + offset_tloka, 0.0f)); // Przesuwamy tłok na korbowód
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mTlok3));
 	glBindVertexArray(tlok.vao);
 	glDrawArrays(GL_TRIANGLES, 0, tlok.vertexCount);
@@ -317,15 +330,15 @@ void drawScene(GLFWwindow* window) {
 	// 4.4 CYLINDER 4
 	// 4.4.1 KORBOWÓD
 	glm::mat4 mKorbowod4 = M;
-	mKorbowod4 = glm::translate(mKorbowod4, glm::vec3(cylinder4, pin_y_14, pin_x_14)); // Przesuwamy korbowód na wał
-	mKorbowod4 = glm::rotate(mKorbowod4, kat_korb_14, glm::vec3(1.0f, 0.0f, 0.0f));
+	mKorbowod4 = glm::translate(mKorbowod4, glm::vec3(cylinder4, pin_y_14, pin_z_14)); // Przesuwamy korbowód na wał
+	mKorbowod4 = glm::rotate(mKorbowod4, -kat_korb_14, glm::vec3(1.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mKorbowod4));
 	glBindVertexArray(korbowod.vao);
 	glDrawArrays(GL_TRIANGLES, 0, korbowod.vertexCount);
 
 	// 4.4.2 TŁOK
 	glm::mat4 mTlok4 = M;
-	mTlok4 = glm::translate(mTlok4, glm::vec3(-65.0f + odstep * 3, tlok14, 0.0f)); // Przesuwamy tłok na korbowód
+	mTlok4 = glm::translate(mTlok4, glm::vec3(-65.0f + odstep * 3, tlok14 + offset_tloka, 0.0f)); // Przesuwamy tłok na korbowód
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mTlok4));
 	glBindVertexArray(tlok.vao);
 	glDrawArrays(GL_TRIANGLES, 0, tlok.vertexCount);
@@ -384,10 +397,16 @@ int main(void)
 
 	initOpenGLProgram(window); //Operacje inicjujące
 
-	//Główna pętla	
+	//Główna pętla
+	float angle_x = 0; //Aktualny kąt obrotu obiektu
+	float angle_y = 0; //Aktualny kąt obrotu obiektu
+	glfwSetTime(0); //Zeruj timer
 	while (!glfwWindowShouldClose(window)) //Tak długo jak okno nie powinno zostać zamknięte
-	{		
-		drawScene(window); //Wykonaj procedurę rysującą
+	{
+		angle_x += speed_x * glfwGetTime(); //Zwiększ/zmniejsz kąt obrotu na podstawie prędkości i czasu jaki upłynał od poprzedniej klatki
+		angle_y += speed_y * glfwGetTime(); //Zwiększ/zmniejsz kąt obrotu na podstawie prędkości i czasu jaki upłynał od poprzedniej klatki
+		glfwSetTime(0); //Zeruj timer
+		drawScene(window, angle_x, angle_y); //Wykonaj procedurę rysującą
 		glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
 	}
 
