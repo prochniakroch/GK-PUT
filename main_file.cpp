@@ -152,7 +152,15 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 
 	// 2. Uruchomienie shadera
 	spColored->use();
+	// 2. NOWE: Odpalamy żarówkę! 
+	// (Ustawiamy ją wysoko w górze i trochę przed silnikiem: X=0, Y=15, Z=15)
+	glUniform3f(spColored->u("lightPos"), 0.0f, 15.0f, 15.0f);
 
+	// Mówimy karcie graficznej, gdzie stoi kamera (wklej tu te same liczby co w glm::lookAt!)
+	glUniform3f(spColored->u("viewPos"), -3.4f, 5.0f, 15.0f);
+
+	// Nadajemy kolor częściom silnika (0.7, 0.7, 0.7 to ładny, jasny odcień aluminium/stali)
+	glUniform3f(spColored->u("objectColor"), 0.7f, 0.7f, 0.7f);
 	// Stałe
 	static float angle = 0.0f;
 	float speed = 0.05f;
@@ -203,7 +211,7 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	glUniformMatrix4fv(spColored->u("P"), 1, false, glm::value_ptr(P));
 
 	// WYMUSZAMY RYSOWANIE SIATKI (WIREFRAME) DLA WSZYSTKICH OBIEKTÓW
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	// Wspólna skala i pozycja 
 	glm::mat4 M = glm::mat4(1.0f);
@@ -214,15 +222,15 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	float TDC = 0.0f;
 	float TDC_Korbowod = 15.0f;
 	float TDC_Tlok = 75.5f;
-	float TDC_Zawors = 103.0f;
-	float TDC_Zaworw = 103.0f;
+	float TDC_Zawors = 107.0f;
+	float TDC_Zaworw = 107.0f;
 
 	// BDC - 15 w dół
 	float BDC = 0.0f;
 	float BDC_Korbowod = -15.0f;
 	float BDC_Tlok = 45.5f;
-	float BDC_Zawors = 103.0f;
-	float BDC_Zaworw = 103.0f;
+	float BDC_Zawors = 107.0f;
+	float BDC_Zaworw = 107.0f;
 
 	float odstep = 41.0f; // Odstęp między cylindrami
 	float wal_w_lewo = -117.5f;

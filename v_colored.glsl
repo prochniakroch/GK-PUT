@@ -1,17 +1,25 @@
-#version 330
+#version 330 core
 
-//Zmienne jednorodne
-uniform mat4 P;
-uniform mat4 V;
+// Odbieramy dane z Twojego LoadModelOBJ (atrybuty 0 i 1)
+layout (location = 0) in vec3 aPos;    
+layout (location = 1) in vec3 aNormal; 
+
+// Wysy³amy te dane dalej, do Fragment Shadera
+out vec3 FragPos;
+out vec3 Normal;
+
+// Macierze, które ju¿ wysy³asz z C++
 uniform mat4 M;
+uniform mat4 V;
+uniform mat4 P;
 
-//Atrybuty
-layout (location=0) in vec4 vertex; //wspolrzedne wierzcholka w przestrzeni modelu
-layout (location=3) in vec4 color; //kolor wierzcho³ka
-
-out vec4 i_c;
-
-void main(void) {
-    i_c=color;
-    gl_Position=P*V*M*vertex;
+void main() {
+    // Obliczamy fizyczn¹ pozycjê punktu w œwiecie 3D (potrzebne ¿arówce)
+    FragPos = vec3(M * vec4(aPos, 1.0));
+    
+    // Zabezpieczenie wektorów normalnych przed zniekszta³ceniami przy obracaniu wa³u
+    Normal = mat3(transpose(inverse(M))) * aNormal;  
+    
+    // Ostateczna pozycja punktu na ekranie Twojego monitora
+    gl_Position = P * V * vec4(FragPos, 1.0);
 }
