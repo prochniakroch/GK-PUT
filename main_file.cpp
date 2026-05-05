@@ -152,8 +152,7 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 
 	// 2. Uruchomienie shadera
 	spColored->use();
-	// 2. NOWE: Odpalamy żarówkę! 
-	// (Ustawiamy ją wysoko w górze i trochę przed silnikiem: X=0, Y=15, Z=15)
+	// Żarówa (Ustawiamy ją wysoko w górze i trochę przed silnikiem: X=0, Y=15, Z=15)
 	glUniform3f(spColored->u("lightPos"), 0.0f, 15.0f, 15.0f);
 
 	// Mówimy karcie graficznej, gdzie stoi kamera (wklej tu te same liczby co w glm::lookAt!)
@@ -162,6 +161,7 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	// Nadajemy kolor częściom silnika (0.7, 0.7, 0.7 to ładny, jasny odcień aluminium/stali)
 	glUniform3f(spColored->u("objectColor"), 0.7f, 0.7f, 0.7f);
 	// Stałe
+
 	static float angle = 0.0f;
 	float speed = 0.05f;
 	// promień wału 17.437 lub 17.40335
@@ -187,6 +187,38 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	float pin_y_23 = r * cos(angle_180); // pozycja sworznia w osi X
 	float pin_z_23 = r * sin(angle_180); // pozycja sworznia w osi Y
 	float kat_korb_23 = asin((r * sin(angle_180)) / l);
+
+	// Rorząd 1-3-4-2 
+	float walek_angle = angle * 0.5f; // wałek rozrządu kręci się dwa razy wolniej
+	float max_otwarcie = -1.5f;       // maks otwarcie zaworów
+
+	// Fazy zapłonu przypisane do odpowiednich cylindrów (kolejność 1-3-4-2)
+	// Odstęp to dokładnie 90 stopni wałka (PI/2)
+	float faza_cyl1 = 0.0f;           // 1. w kolejności zapłonu
+	float faza_cyl3 = 1.570796f;      // 2. w kolejności zapłonu (PI / 2)
+	float faza_cyl4 = 3.141593f;      // 3. w kolejności zapłonu (PI)
+	float faza_cyl2 = 4.712389f;      // 4. w kolejności zapłonu (3 * PI / 2)
+
+	// Punkty szczytowe dla suwów (przesunięcie krzywki na wałku)
+	// Żeby zawór otwierał się idealnie w połowie drogi tłoka
+	float szczyt_wydech = 2.356194f; // Środek suwu wydechu (3/4 PI)
+	float szczyt_wlot = 3.926991f; // Środek suwu ssania (5/4 PI)
+
+	// --- CYLINDER 1 ---
+	float ssanie_1 = pow(fmax(0.0f, cos(walek_angle - faza_cyl1 - szczyt_wlot)), 16.0f) * max_otwarcie;
+	float wydech_1 = pow(fmax(0.0f, cos(walek_angle - faza_cyl1 - szczyt_wydech)), 16.0f) * max_otwarcie;
+
+	// --- CYLINDER 2 ---
+	float ssanie_2 = pow(fmax(0.0f, cos(walek_angle - faza_cyl2 - szczyt_wlot)), 16.0f) * max_otwarcie;
+	float wydech_2 = pow(fmax(0.0f, cos(walek_angle - faza_cyl2 - szczyt_wydech)), 16.0f) * max_otwarcie;
+
+	// --- CYLINDER 3 ---
+	float ssanie_3 = pow(fmax(0.0f, cos(walek_angle - faza_cyl3 - szczyt_wlot)), 16.0f) * max_otwarcie;
+	float wydech_3 = pow(fmax(0.0f, cos(walek_angle - faza_cyl3 - szczyt_wydech)), 16.0f) * max_otwarcie;
+
+	// --- CYLINDER 4 ---
+	float ssanie_4 = pow(fmax(0.0f, cos(walek_angle - faza_cyl4 - szczyt_wlot)), 16.0f) * max_otwarcie;
+	float wydech_4 = pow(fmax(0.0f, cos(walek_angle - faza_cyl4 - szczyt_wydech)), 16.0f) * max_otwarcie;
 
 	// Klawisze
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
@@ -263,14 +295,14 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 
 	// 4.1.3 ZAWÓR SSĄCY
 	glm::mat4 mZawors1 = M;
-	mZawors1 = glm::translate(mZawors1, glm::vec3(-65.0f, TDC_Zawors, 5.0f)); // Przesuwamy zawór ssący na tłok
+	mZawors1 = glm::translate(mZawors1, glm::vec3(-65.0f, TDC_Zawors + ssanie_1, 5.0f)); // Przesuwamy zawór ssący na tłok
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mZawors1));
 	glBindVertexArray(zawors.vao);
 	glDrawArrays(GL_TRIANGLES, 0, zawors.vertexCount);
 
 	// 4.1.4 ZAWÓR WYDECHOWY
 	glm::mat4 mZaworw1 = M;
-	mZaworw1 = glm::translate(mZaworw1, glm::vec3(-65.0f, TDC_Zaworw, -5.0f)); // Przesuwamy zawór wydechowy na tłok
+	mZaworw1 = glm::translate(mZaworw1, glm::vec3(-65.0f, TDC_Zaworw + wydech_1, -5.0f)); // Przesuwamy zawór wydechowy na tłok
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mZaworw1));
 	glBindVertexArray(zaworw.vao);
 	glDrawArrays(GL_TRIANGLES, 0, zaworw.vertexCount);
@@ -293,14 +325,14 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 
 	// 4.2.3 ZAWÓR SSĄCY
 	glm::mat4 mZawors2 = M;
-	mZawors2 = glm::translate(mZawors2, glm::vec3(-65.0f + odstep, BDC_Zawors, 5.0f)); // Przesuwamy zawór ssący na tłok
+	mZawors2 = glm::translate(mZawors2, glm::vec3(-65.0f + odstep, BDC_Zawors + ssanie_2, 5.0f)); // Przesuwamy zawór ssący na tłok
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mZawors2));
 	glBindVertexArray(zawors.vao);
 	glDrawArrays(GL_TRIANGLES, 0, zawors.vertexCount);
 
 	// 4.2.4 ZAWÓR WYDECHOWY
 	glm::mat4 mZaworw2 = M;
-	mZaworw2 = glm::translate(mZaworw2, glm::vec3(-65.0f + odstep, BDC_Zaworw, -5.0f)); // Przesuwamy zawór wydechowy na tłok
+	mZaworw2 = glm::translate(mZaworw2, glm::vec3(-65.0f + odstep, BDC_Zaworw + wydech_2, -5.0f)); // Przesuwamy zawór wydechowy na tłok
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mZaworw2));
 	glBindVertexArray(zaworw.vao);
 	glDrawArrays(GL_TRIANGLES, 0, zaworw.vertexCount);
@@ -323,14 +355,14 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 
 	// 4.3.3 ZAWÓR SSĄCY
 	glm::mat4 mZawors3 = M;
-	mZawors3 = glm::translate(mZawors3, glm::vec3(-65.0f + odstep * 2, BDC_Zawors, 5.0f)); // Przesuwamy zawór ssący na tłok
+	mZawors3 = glm::translate(mZawors3, glm::vec3(-65.0f + odstep * 2, BDC_Zawors + ssanie_3, 5.0f)); // Przesuwamy zawór ssący na tłok
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mZawors3));
 	glBindVertexArray(zawors.vao);
 	glDrawArrays(GL_TRIANGLES, 0, zawors.vertexCount);
 
 	// 4.3.4 ZAWÓR WYDECHOWY
 	glm::mat4 mZaworw3 = M;
-	mZaworw3 = glm::translate(mZaworw3, glm::vec3(-65.0f + odstep * 2, BDC_Zaworw, -5.0f)); // Przesuwamy zawór wydechowy na tłok
+	mZaworw3 = glm::translate(mZaworw3, glm::vec3(-65.0f + odstep * 2, BDC_Zaworw + wydech_3, -5.0f)); // Przesuwamy zawór wydechowy na tłok
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mZaworw3));
 	glBindVertexArray(zaworw.vao);
 	glDrawArrays(GL_TRIANGLES, 0, zaworw.vertexCount);
@@ -353,14 +385,14 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 
 	// 4.4.3 ZAWÓR SSĄCY
 	glm::mat4 mZawors4 = M;
-	mZawors4 = glm::translate(mZawors4, glm::vec3(-65.0f + odstep * 3, TDC_Zawors, 5.0f)); // Przesuwamy zawór ssący na tłok
+	mZawors4 = glm::translate(mZawors4, glm::vec3(-65.0f + odstep * 3, TDC_Zawors + ssanie_4, 5.0f)); // Przesuwamy zawór ssący na tłok
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mZawors4));
 	glBindVertexArray(zawors.vao);
 	glDrawArrays(GL_TRIANGLES, 0, zawors.vertexCount);
 
 	// 4.4.4 ZAWÓR WYDECHOWY
 	glm::mat4 mZaworw4 = M;
-	mZaworw4 = glm::translate(mZaworw4, glm::vec3(-65.0f + odstep * 3, TDC_Zaworw, -5.0f)); // Przesuwamy zawór wydechowy na tłok
+	mZaworw4 = glm::translate(mZaworw4, glm::vec3(-65.0f + odstep * 3, TDC_Zaworw + wydech_4, -5.0f)); // Przesuwamy zawór wydechowy na tłok
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mZaworw4));
 	glBindVertexArray(zaworw.vao);
 	glDrawArrays(GL_TRIANGLES, 0, zaworw.vertexCount);
