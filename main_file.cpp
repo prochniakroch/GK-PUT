@@ -47,7 +47,7 @@ struct ModelData {
 };
 
 // Tworzymy 5 osobnych "pudełek" dla 5 części silnika
-ModelData tlok, korbowod, wal, zawors, zaworw;
+ModelData tlok, korbowod, wal, zawors, zaworw, walek;
 
 ModelData LoadModelOBJ(const char* path) {
 	ModelData data = { 0, 0, 0 }; // Puste pudełko na start
@@ -134,6 +134,7 @@ void initOpenGLProgram(GLFWwindow* window) {
 	korbowod = LoadModelOBJ("korbowod.obj");
 	zawors = LoadModelOBJ("zawors.obj");
 	zaworw = LoadModelOBJ("zaworw.obj");
+	walek = LoadModelOBJ("walek.obj");
 }
 
 
@@ -266,6 +267,7 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 
 	float odstep = 41.0f; // Odstęp między cylindrami
 	float wal_w_lewo = -117.5f;
+	float walek_w_gore = 110.0f;
 
 	// 4. Macierze obiektów
 	// 4.0 WAŁ
@@ -275,6 +277,13 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mWal));
 	glBindVertexArray(wal.vao);
 	glDrawArrays(GL_TRIANGLES, 0, wal.vertexCount);
+
+	// 4.0.1 WAŁEK ROZRZĄDU
+	glm::mat4 mWalek = M;
+	mWalek = glm::translate(mWalek, glm::vec3(-40.0f, walek_w_gore, 0.0f));
+	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mWalek));
+	glBindVertexArray(walek.vao);
+	glDrawArrays(GL_TRIANGLES, 0, walek.vertexCount);
 
 
 	// 4.1 CYLINDER 1
