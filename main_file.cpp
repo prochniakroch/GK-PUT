@@ -35,6 +35,8 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
+ShaderProgram* sp;
+
 float speed_x = 0;
 float speed_y = 0;
 float aspectRatio = 1;
@@ -69,12 +71,12 @@ ModelData LoadModelOBJ(const char* path) {
 		for (size_t i = 0; i < shapes[s].mesh.indices.size(); i++) {
 			tinyobj::index_t idx = shapes[s].mesh.indices[i];
 
-			// Pozycje XYZ
+			// 1. Wrzucamy do wagonika pozycję wierzchołka (3 liczby: XYZ)
 			vertexData.push_back(attrib.vertices[3 * size_t(idx.vertex_index) + 0]);
 			vertexData.push_back(attrib.vertices[3 * size_t(idx.vertex_index) + 1]);
 			vertexData.push_back(attrib.vertices[3 * size_t(idx.vertex_index) + 2]);
 
-			// Normale
+			// 2. Wrzucamy do wagonika kierunek, w którym patrzy wierzchołek (3 liczby: Normale)
 			if (idx.normal_index >= 0) {
 				vertexData.push_back(attrib.normals[3 * size_t(idx.normal_index) + 0]);
 				vertexData.push_back(attrib.normals[3 * size_t(idx.normal_index) + 1]);
@@ -83,11 +85,17 @@ ModelData LoadModelOBJ(const char* path) {
 			else {
 				vertexData.push_back(0.0f); vertexData.push_back(1.0f); vertexData.push_back(0.0f);
 			}
+
+			// 3. Wrzucamy do wagonika KOLOR (3 liczby: RGB) - sami go tu "wymyślamy", bo plik .obj go nie ma
+			vertexData.push_back(0.7f); // Czerwony
+			vertexData.push_back(0.7f); // Zielony
+			vertexData.push_back(0.7f); // Niebieski (daje nam to szary metal)
 		}
 	}
 
-	data.vertexCount = vertexData.size() / 6;
+	data.vertexCount = vertexData.size() / 9;
 
+	// Tworzymy i otwieramy bufory
 	glGenVertexArrays(1, &data.vao);
 	glGenBuffers(1, &data.vbo);
 
@@ -95,11 +103,20 @@ ModelData LoadModelOBJ(const char* path) {
 	glBindBuffer(GL_ARRAY_BUFFER, data.vbo);
 	glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(float), vertexData.data(), GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
+	// Pytamy klasę o numery adresów
+	GLuint adres_vertex = sp->a("vertex");
+	GLuint adres_normal = sp->a("normal");
+	GLuint adres_color = sp->a("color");
 
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
+	// Włączamy adresy
+	glEnableVertexAttribArray(adres_vertex);
+	glEnableVertexAttribArray(adres_normal);
+	glEnableVertexAttribArray(adres_color);
+
+	// Tłumaczymy układ w wagoniku z 9 liczbami
+	glVertexAttribPointer(adres_vertex, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
+	glVertexAttribPointer(adres_normal, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(adres_color, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float)));
 
 	glBindVertexArray(0);
 
@@ -128,6 +145,8 @@ void initOpenGLProgram(GLFWwindow* window) {
 
 	glfwSetWindowSizeCallback(window, windowResizeCallback);
 
+	sp = new ShaderProgram("v_simplest.glsl", NULL, "f_simplest.glsl");
+
 	// Wczytujemy pliki z dysku i zapisujemy ich dane do kart pamięci VRAM
 	tlok = LoadModelOBJ("tlok.obj");
 	wal = LoadModelOBJ("wal1.obj");
@@ -151,16 +170,6 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	// 1. Czyszczenie ekranu i bufora głębokości 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// 2. Uruchomienie shadera
-	spColored->use();
-	// Żarówa (Ustawiamy ją wysoko w górze i trochę przed silnikiem: X=0, Y=15, Z=15)
-	glUniform3f(spColored->u("lightPos"), 0.0f, 15.0f, 15.0f);
-
-	// Mówimy karcie graficznej, gdzie stoi kamera (wklej tu te same liczby co w glm::lookAt!)
-	glUniform3f(spColored->u("viewPos"), -3.4f, 5.0f, 15.0f);
-
-	// Nadajemy kolor częściom silnika (0.7, 0.7, 0.7 to ładny, jasny odcień aluminium/stali)
-	glUniform3f(spColored->u("objectColor"), 0.7f, 0.7f, 0.7f);
 	// Stałe
 
 	static float angle = 0.0f;
@@ -231,7 +240,7 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	};
 
 
-	// 3. Kamera 
+	// 2. Kamera 
 	// 1 -> -3.4, 2 -> -1.2, 3 -> 1.2, 4 -> 3.4
 
 	glm::mat4 V = glm::lookAt(
@@ -240,13 +249,17 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 		glm::vec3(0.0f, 1.0f, 0.0f)
 	);
 	glm::mat4 P = glm::perspective(50.0f * PI / 180.0f, aspectRatio, 0.01f, 50.0f);
-	glUniformMatrix4fv(spColored->u("V"), 1, false, glm::value_ptr(V));
-	glUniformMatrix4fv(spColored->u("P"), 1, false, glm::value_ptr(P));
+
+	// 3. Uruchomienie shadera
+	sp->use();
+
+	glUniformMatrix4fv(sp->u("P"), 1, false, glm::value_ptr(P));
+	glUniformMatrix4fv(sp->u("V"), 1, false, glm::value_ptr(V));
 
 	// WYMUSZAMY RYSOWANIE SIATKI (WIREFRAME) DLA WSZYSTKICH OBIEKTÓW
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	// Wspólna skala i pozycja 
+	// Wspólna skala
 	glm::mat4 M = glm::mat4(1.0f);
 	M = glm::scale(M, glm::vec3(0.05f, 0.05f, 0.05f));
 
