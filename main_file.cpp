@@ -287,6 +287,7 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	sp->use();
 
 	glUniform4f(sp->u("light_pos"), 0.0f, 20.0f, 15.0f, 1.0f); 	// WŁĄCZAMY ŻARÓWKĘ (Wieszamy ją 20 metrów w górę i 15 w naszą stronę)
+	glUniform4f(sp->u("light_pos2"), 0.0f, -10.0f, -20.0f, 1.0f); // Drugie świało
 	glUniformMatrix4fv(sp->u("P"), 1, false, glm::value_ptr(P));
 	glUniformMatrix4fv(sp->u("V"), 1, false, glm::value_ptr(V));
 
@@ -316,7 +317,7 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	float wal_w_lewo = -117.5f;
 	float walek_w_gore = 125.0f;
 	float rozstaw_walkow = 17.0f;
-	float rozstaw_zaworow = 17.0f;
+	float rozstaw_zaworow = 14.0f;
 	float kat_zaworow = 0.20f; // Kąt rozwarcia zaworów (w radianach)
 
 	float faza_walek1 = 0.0f;
