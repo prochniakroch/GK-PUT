@@ -319,6 +319,9 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	float rozstaw_zaworow = 17.0f;
 	float kat_zaworow = 0.20f; // Kąt rozwarcia zaworów (w radianach)
 
+	float faza_walek1 = 0.0f;
+	float faza_walek2 = 0.0f;
+
 	// 4. Macierze obiektów
 	// 4.0 WAŁ
 	glm::mat4 mWal = M;
@@ -331,6 +334,7 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	// 4.0.1 WAŁEK ROZRZĄDU 1
 	glm::mat4 mWalek1 = M;
 	mWalek1 = glm::translate(mWalek1, glm::vec3(-40.0f, walek_w_gore, rozstaw_walkow));
+	mWalek1 = glm::rotate(mWalek1, walek_angle + faza_walek1, glm::vec3(1.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mWalek1));
 	glBindVertexArray(walek1.vao);
 	glDrawArrays(GL_TRIANGLES, 0, walek1.vertexCount);
@@ -338,6 +342,7 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	// 4.0.1 WAŁEK ROZRZĄDU 2
 	glm::mat4 mWalek2 = M;
 	mWalek2 = glm::translate(mWalek2, glm::vec3(-51.0f, walek_w_gore, -rozstaw_walkow));
+	mWalek2 = glm::rotate(mWalek2, walek_angle + faza_walek2, glm::vec3(1.0f, 0.0f, 0.0f));
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mWalek2));
 	glBindVertexArray(walek2.vao);
 	glDrawArrays(GL_TRIANGLES, 0, walek2.vertexCount);
