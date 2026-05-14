@@ -230,29 +230,62 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	float ssanie_4 = pow(fmax(0.0f, cos(walek_angle - faza_cyl4 - szczyt_wlot)), 16.0f) * max_otwarcie;
 	float wydech_4 = pow(fmax(0.0f, cos(walek_angle - faza_cyl4 - szczyt_wydech)), 16.0f) * max_otwarcie;
 
-	// Klawisze
+	// Sterowanie z klawiatury
+	// Sterowanie obrotem silnika
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
 		angle += speed;
 	};
-
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
 		angle -= speed;
 	};
+
+	// Sterowanie kamerą 
+	static float cam_yaw = 0.0f;   // Kąt lewo/prawo
+	static float cam_pitch = 0.3f; // Kąt góra/dół (zaczynamy lekko od góry)
+	float cam_radius = 20.0f;      // Odległość kamery od silnika
+	float cam_speed = 0.03f;       // Czułość obrotu kamery
+
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) { 
+		cam_yaw -= cam_speed; 
+	};
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) { 
+		cam_yaw += cam_speed; 
+	};
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) { 
+		cam_pitch += cam_speed; 
+	};
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) { 
+		cam_pitch -= cam_speed; 
+	};
+
+	if (cam_pitch > 1.5f) cam_pitch = 1.5f;
+	if (cam_pitch < -1.5f) cam_pitch = -1.5f;
 
 
 	// 2. Kamera 
 	// 1 -> -3.4, 2 -> -1.2, 3 -> 1.2, 4 -> 3.4
 
+	// Punkt, na który patrzy kamera (środek Twojego silnika)
+	glm::vec3 target = glm::vec3(-3.2f, 0.0f, 0.0f);
+
+	// Wyliczanie nowej pozycji kamery w przestrzeni 3D za pomocą trygonometrii
+	glm::vec3 cam_pos;
+	cam_pos.x = target.x + cam_radius * cos(cam_pitch) * sin(cam_yaw);
+	cam_pos.y = target.y + cam_radius * sin(cam_pitch);
+	cam_pos.z = target.z + cam_radius * cos(cam_pitch) * cos(cam_yaw);
+
 	glm::mat4 V = glm::lookAt(
-		glm::vec3(-3.2f, 5.0f, 15.0f),
-		glm::vec3(-3.2f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 0.0f)
+		cam_pos,                      // Skąd patrzymy (nasza nowa, wyliczona pozycja)
+		target,                       // Na co patrzymy (środek silnika)
+		glm::vec3(0.0f, 1.0f, 0.0f)   // Gdzie jest "góra" (oś Y)
 	);
+
 	glm::mat4 P = glm::perspective(50.0f * PI / 180.0f, aspectRatio, 0.01f, 50.0f);
 
 	// 3. Uruchomienie shadera
 	sp->use();
 
+	glUniform4f(sp->u("light_pos"), 0.0f, 20.0f, 15.0f, 1.0f); 	// WŁĄCZAMY ŻARÓWKĘ (Wieszamy ją 20 metrów w górę i 15 w naszą stronę)
 	glUniformMatrix4fv(sp->u("P"), 1, false, glm::value_ptr(P));
 	glUniformMatrix4fv(sp->u("V"), 1, false, glm::value_ptr(V));
 
