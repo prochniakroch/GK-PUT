@@ -9,21 +9,14 @@ in vec4 n;
 in vec4 v;
 
 void main(void) {
-	
 	vec4 ml = normalize(l);
 	vec4 ml2 = normalize(l2);
 	vec4 mn = normalize(n);
 	vec4 mv = normalize(v);
 
+	// światła
 	vec4 cold_color = vec4(0.3, 0.5, 1.0, 1.0); // zimne swiatło 
 	vec4 warm_color = vec4(1.0, 0.9, 0.75, 1.0); // ciepłe światło
-
-	//float nl = clamp(dot(mn, ml), 0.0, 1.0);
-
-	//vec4 r = reflect(-ml, mn);
-	//float rv = clamp(dot(r, mv), 0.0, 1.0);
-	//rv = pow(rv, 25.0);
-	//pixelColor = ic * nl + rv;
 
 	// światło 1 ciepłe
 	vec4 half_vec1 = normalize(ml + mv); // Blinn-Phong wyciąga "średnią" z kamery i światła
@@ -45,5 +38,12 @@ void main(void) {
 	// Sumujemy odblaski (specular) dla obu świateł
 	vec4 spec = (vec4(1.0) * specular1 * warm_color) + (vec4(1.0) * specular2 * cold_color * 0.6);
 
-	pixelColor = clamp(ambient + diffuse + spec, 0.0, 1.0);
+	// Efekt Fresnela
+	float fresnel_factor = pow(1.0 - max(dot(mn, mv), 0.0), 3.0); // Liczymy jak bardzo ściana jest odwrócona bokiem do oka.
+	vec4 rim_light = vec4(1.0) * fresnel_factor * 0.5; // Biała poświata na krawędziach, wzmacniana przez efekt Fresnela
+
+	vec4 final_color = clamp(ambient + diffuse + spec + rim_light, 0.0, 1.0); // Sumujemy wszystko i ograniczamy do [0,1]
+
+	//Korekcja Gamma (sRGB) - konwertujemy liniowy kolor na sRGB, aby wyglądał poprawnie na monitorze
+	pixelColor = pow(final_color, vec4(1.0/2.2)); 
 }

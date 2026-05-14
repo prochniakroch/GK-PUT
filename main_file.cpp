@@ -303,19 +303,19 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	float TDC = 0.0f;
 	float TDC_Korbowod = 15.0f;
 	float TDC_Tlok = 75.5f;
-	float TDC_Zawors = 107.0f;
-	float TDC_Zaworw = 107.0f;
+	float TDC_Zawors = 106.5f;
+	float TDC_Zaworw = 106.5f;
 
 	// BDC - 15 w dół
 	float BDC = 0.0f;
 	float BDC_Korbowod = -15.0f;
 	float BDC_Tlok = 45.5f;
-	float BDC_Zawors = 107.0f;
-	float BDC_Zaworw = 107.0f;
+	float BDC_Zawors = 106.5f;
+	float BDC_Zaworw = 106.5f;
 
 	float odstep = 41.0f; // Odstęp między cylindrami
 	float wal_w_lewo = -117.5f;
-	float walek_w_gore = 125.0f;
+	float walek_w_gore = 123.0f;
 	float rozstaw_walkow = 17.0f;
 	float rozstaw_zaworow = 14.0f;
 	float kat_zaworow = 0.20f; // Kąt rozwarcia zaworów (w radianach)
