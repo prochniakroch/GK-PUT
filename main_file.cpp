@@ -49,7 +49,7 @@ struct ModelData {
 };
 
 // Tworzymy 5 osobnych "pudełek" dla 5 części silnika
-ModelData tlok, korbowod, wal, zawors, zaworw, walek1, walek2;
+ModelData tlok, korbowod, wal, zawors, zaworw, walek1, walek2, koloZebateWalka, koloZebateWalu;
 
 ModelData LoadModelOBJ(const char* path) {
 	ModelData data = { 0, 0, 0 }; // Puste pudełko na start
@@ -155,6 +155,8 @@ void initOpenGLProgram(GLFWwindow* window) {
 	zaworw = LoadModelOBJ("zaworw.obj");
 	walek1 = LoadModelOBJ("walek1.obj");
 	walek2 = LoadModelOBJ("walek2.obj");
+	koloZebateWalka = LoadModelOBJ("koloZebateWalka.obj");
+	koloZebateWalu = LoadModelOBJ("koloZebateWalu.obj");
 }
 
 
@@ -340,7 +342,7 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	glBindVertexArray(walek1.vao);
 	glDrawArrays(GL_TRIANGLES, 0, walek1.vertexCount);
 
-	// 4.0.1 WAŁEK ROZRZĄDU 2
+	// 4.0.2 WAŁEK ROZRZĄDU 2
 	glm::mat4 mWalek2 = M;
 	mWalek2 = glm::translate(mWalek2, glm::vec3(-101.5f, walek_w_gore, -rozstaw_walkow));
 	mWalek2 = glm::rotate(mWalek2, -walek_angle + faza_walek2, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -348,6 +350,22 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 	glUniformMatrix4fv(spColored->u("M"), 1, false, glm::value_ptr(mWalek2));
 	glBindVertexArray(walek2.vao);
 	glDrawArrays(GL_TRIANGLES, 0, walek2.vertexCount);
+
+	// 4.0.3 KOŁO ZĘBATE WAŁKA ROZRZĄDU	
+	glm::mat4 mKoloZebateWalka = M;
+	mKoloZebateWalka = glm::translate(mKoloZebateWalka, glm::vec3(-110.5f, walek_w_gore, rozstaw_walkow));
+	mKoloZebateWalka = glm::rotate(mKoloZebateWalka, walek_angle + faza_walek1, glm::vec3(1.0f, 0.0f, 0.0f));
+	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(mKoloZebateWalka));
+	glBindVertexArray(koloZebateWalka.vao);
+	glDrawArrays(GL_TRIANGLES, 0, koloZebateWalka.vertexCount);
+
+	// 4.0.4 KOŁO ZĘBATE WAŁU
+	glm::mat4 mKoloZebateWalu = M;
+	mKoloZebateWalu = glm::translate(mKoloZebateWalu, glm::vec3(wal_w_lewo + 7.0f, 0.0f, 0.0f));
+	mKoloZebateWalu = glm::rotate(mKoloZebateWalu, angle, glm::vec3(1.0f, 0.0f, 0.0f));
+	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(mKoloZebateWalu));
+	glBindVertexArray(koloZebateWalu.vao);
+	glDrawArrays(GL_TRIANGLES, 0, koloZebateWalu.vertexCount);
 
 	// 4.1 CYLINDER 1
 	// 4.1.1 KORBOWÓD
