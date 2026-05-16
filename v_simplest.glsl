@@ -6,6 +6,9 @@ uniform mat4 P;
 uniform vec4 light_pos;
 uniform vec4 light_pos2;
 
+in vec2 texCoord0;
+out vec2 iTexCoord0;
+
 in vec4 vertex;
 in vec4 normal;
 in vec4 color;
@@ -28,5 +31,7 @@ void main(void) {
 
 	gl_Position = P * V * M * vertex;
 	ic = color;
+
+	iTexCoord0 = texCoord0;
 
 }

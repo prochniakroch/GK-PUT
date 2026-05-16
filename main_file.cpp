@@ -41,6 +41,8 @@ float speed_x = 0;
 float speed_y = 0;
 float aspectRatio = 1;
 
+GLuint brushedTex;
+
 // Zamiast luźnych zmiennych, robimy "pudełko" na dane modelu
 struct ModelData {
 	GLuint vao;
@@ -71,12 +73,12 @@ ModelData LoadModelOBJ(const char* path) {
 		for (size_t i = 0; i < shapes[s].mesh.indices.size(); i++) {
 			tinyobj::index_t idx = shapes[s].mesh.indices[i];
 
-			// 1. Wrzucamy do wagonika pozycję wierzchołka (3 liczby: XYZ)
+			// 1. POZYCJA (3 liczby: XYZ)
 			vertexData.push_back(attrib.vertices[3 * size_t(idx.vertex_index) + 0]);
 			vertexData.push_back(attrib.vertices[3 * size_t(idx.vertex_index) + 1]);
 			vertexData.push_back(attrib.vertices[3 * size_t(idx.vertex_index) + 2]);
 
-			// 2. Wrzucamy do wagonika kierunek, w którym patrzy wierzchołek (3 liczby: Normale)
+			// 2. NORMALE (3 liczby)
 			if (idx.normal_index >= 0) {
 				vertexData.push_back(attrib.normals[3 * size_t(idx.normal_index) + 0]);
 				vertexData.push_back(attrib.normals[3 * size_t(idx.normal_index) + 1]);
@@ -86,16 +88,25 @@ ModelData LoadModelOBJ(const char* path) {
 				vertexData.push_back(0.0f); vertexData.push_back(1.0f); vertexData.push_back(0.0f);
 			}
 
-			// 3. Wrzucamy do wagonika KOLOR (3 liczby: RGB) - sami go tu "wymyślamy", bo plik .obj go nie ma
-			vertexData.push_back(0.7f); // Czerwony
-			vertexData.push_back(0.7f); // Zielony
-			vertexData.push_back(0.7f); // Niebieski (daje nam to szary metal)
+			// 3. KOLOR (3 liczby: RGB)
+			vertexData.push_back(0.7f);
+			vertexData.push_back(0.7f);
+			vertexData.push_back(0.7f);
+
+			// 4. WSPÓŁRZĘDNE TEKSTURY (UV) - NOWE! (2 liczby)
+			if (idx.texcoord_index >= 0) {
+				vertexData.push_back(attrib.texcoords[2 * size_t(idx.texcoord_index) + 0]);       // U
+				vertexData.push_back(1.0f - attrib.texcoords[2 * size_t(idx.texcoord_index) + 1]); // V (odwracamy, bo OpenGL czyta obrazki do góry nogami)
+			}
+			else {
+				vertexData.push_back(0.0f); vertexData.push_back(0.0f); // Jeśli brak UV w pliku, dajemy zera
+			}
 		}
 	}
 
-	data.vertexCount = vertexData.size() / 9;
+	// Teraz mamy 11 liczb na wierzchołek zamiast 9
+	data.vertexCount = vertexData.size() / 11;
 
-	// Tworzymy i otwieramy bufory
 	glGenVertexArrays(1, &data.vao);
 	glGenBuffers(1, &data.vbo);
 
@@ -103,24 +114,49 @@ ModelData LoadModelOBJ(const char* path) {
 	glBindBuffer(GL_ARRAY_BUFFER, data.vbo);
 	glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(float), vertexData.data(), GL_STATIC_DRAW);
 
-	// Pytamy klasę o numery adresów
+	// Pobieramy adresy z karty graficznej
 	GLuint adres_vertex = sp->a("vertex");
 	GLuint adres_normal = sp->a("normal");
 	GLuint adres_color = sp->a("color");
+	GLuint adres_texCoord = sp->a("texCoord0"); // NOWE!
 
-	// Włączamy adresy
 	glEnableVertexAttribArray(adres_vertex);
 	glEnableVertexAttribArray(adres_normal);
 	glEnableVertexAttribArray(adres_color);
+	if (adres_texCoord != -1) glEnableVertexAttribArray(adres_texCoord); // NOWE!
 
-	// Tłumaczymy układ w wagoniku z 9 liczbami
-	glVertexAttribPointer(adres_vertex, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
-	glVertexAttribPointer(adres_normal, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
-	glVertexAttribPointer(adres_color, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float)));
+	// Tłumaczymy układ w wagoniku z 11 liczbami (stride = 11 * sizeof(float))
+	int stride = 11 * sizeof(float);
+	glVertexAttribPointer(adres_vertex, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+	glVertexAttribPointer(adres_normal, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(adres_color, 3, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
+
+	if (adres_texCoord != -1) {
+		glVertexAttribPointer(adres_texCoord, 2, GL_FLOAT, GL_FALSE, stride, (void*)(9 * sizeof(float))); // Ostatnie 2 liczby
+	}
 
 	glBindVertexArray(0);
 
-	return data; // Zwracamy gotowe bufory z karty graficznej
+	return data;
+}
+
+GLuint readTexture(const char* filename) {
+	GLuint tex;
+	glActiveTexture(GL_TEXTURE0);
+	//Wczytanie do pamięci komputera
+	std::vector<unsigned char> image; //Alokuj wektor do wczytania obrazka
+	unsigned width, height; //Zmienne do których wczytamy wymiary obrazka
+	//Wczytaj obrazek
+	unsigned error = lodepng::decode(image, width, height, filename);
+	//Import do pamięci karty graficznej
+	glGenTextures(1, &tex); //Zainicjuj jeden uchwyt
+	glBindTexture(GL_TEXTURE_2D, tex); //Uaktywnij uchwyt
+	//Wczytaj obrazek do pamięci KG skojarzonej z uchwytem
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
+		GL_RGBA, GL_UNSIGNED_BYTE, (unsigned char*)image.data());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	return tex;
 }
 
 // Procedura obsługi zmiany rozmiaru okna
@@ -148,15 +184,17 @@ void initOpenGLProgram(GLFWwindow* window) {
 	sp = new ShaderProgram("v_simplest.glsl", NULL, "f_simplest.glsl");
 
 	// Wczytujemy pliki z dysku i zapisujemy ich dane do kart pamięci VRAM
-	tlok = LoadModelOBJ("tlok.obj");
-	wal = LoadModelOBJ("wal1.obj");
-	korbowod = LoadModelOBJ("korbowod.obj");
-	zawors = LoadModelOBJ("zawors.obj");
-	zaworw = LoadModelOBJ("zaworw.obj");
-	walek1 = LoadModelOBJ("walek1.obj");
-	walek2 = LoadModelOBJ("walek2.obj");
-	koloZebateWalka = LoadModelOBJ("koloZebateWalka.obj");
-	koloZebateWalu = LoadModelOBJ("koloZebateWalu.obj");
+	tlok = LoadModelOBJ("tlokUV.obj");
+	wal = LoadModelOBJ("wal1UV.obj");
+	korbowod = LoadModelOBJ("korbowodUV.obj");
+	zawors = LoadModelOBJ("zaworsUV.obj");
+	zaworw = LoadModelOBJ("zaworwUV.obj");
+	walek1 = LoadModelOBJ("walek1UV.obj");
+	walek2 = LoadModelOBJ("walek2UV.obj");
+	koloZebateWalka = LoadModelOBJ("koloZebateWalkaUV.obj");
+	koloZebateWalu = LoadModelOBJ("koloZebateWaluUV.obj");
+
+	brushedTex = readTexture("brushed.png");
 }
 
 
@@ -287,6 +325,11 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 
 	// 3. Uruchomienie shadera
 	sp->use();
+
+	glUniform1i(sp->u("textureMap0"), 0); // Ustawiamy "brushed.png" jako teksturę o numerze 0
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, brushedTex);
 
 	glUniform4f(sp->u("light_pos"), 0.0f, 20.0f, 15.0f, 1.0f); 	// WŁĄCZAMY ŻARÓWKĘ (Wieszamy ją 20 metrów w górę i 15 w naszą stronę)
 	glUniform4f(sp->u("light_pos2"), 0.0f, -10.0f, -20.0f, 1.0f); // Drugie świało

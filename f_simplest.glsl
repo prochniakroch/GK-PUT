@@ -2,6 +2,9 @@
 
 out vec4 pixelColor;
 
+in vec2 iTexCoord0;
+uniform sampler2D textureMap0;
+
 in vec4 ic;
 in vec4 l;
 in vec4 l2;
@@ -30,10 +33,12 @@ void main(void) {
 	float hn2 = max(dot(mn, half_vec2), 0.0);
 	float specular2 = pow(hn2, 16.0); // Mniejsza potęga = szerszy, łagodniejszy blask z tyłu
 
-	vec4 ambient = ic * 0.15; // Światło otoczenia
+	vec4 texColor = texture(textureMap0, iTexCoord0); // Pobieramy kolor z tekstury
+
+	vec4 ambient = texColor * 0.15; // Światło otoczenia
 
 	// Sumujemy kolory bazowe (diffuse) dla obu świateł
-	vec4 diffuse = (ic * nl1 * warm_color) + (ic * nl2 * cold_color * 0.6); // Zimne światło jest celowo trochę słabsze (* 0.6)
+	vec4 diffuse = (texColor * nl1 * warm_color) + (texColor * nl2 * cold_color * 0.6); // Zimne światło jest celowo trochę słabsze (* 0.6)
 
 	// Sumujemy odblaski (specular) dla obu świateł
 	vec4 spec = (vec4(1.0) * specular1 * warm_color) + (vec4(1.0) * specular2 * cold_color * 0.6);
